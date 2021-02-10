@@ -1,0 +1,50 @@
+version: '3.8'
+
+networks:
+  backend:
+    name: backendnet
+    driver: bridge
+
+services:
+  lbdbphp:
+    container_name: lbdbphp
+    build:
+      context: ./build/php/
+    depends_on:
+      - lbdbpostgres
+    restart: on-failure
+    volumes:
+      - ./../app:/var/www/html
+      - ./../app/var/cache:/var/www/html/var/cache:cached
+      - ./../app/var/log:/var/www/html/var/log:cached
+    networks:
+      - backend
+  lbdbnginx:
+    container_name: lbdbnginx
+    image: nginx:1.19.6-alpine
+    depends_on:
+      - lbdbphp
+    ports:
+      - 8000:80
+      - 8443:443
+    restart: always
+    volumes:
+      - ./build/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./../app/:/var/www/html
+      - ./../app/var/cache:/var/www/html/var/cache:cached
+      - ./../app/var/log:/var/www/html/var/log:cached
+    networks:
+      - backend
+  lbdbpostgres:
+    container_name: lbdbpostgres
+    build:
+      context: ./build/postgres/
+    restart: always
+    environment:
+      POSTGRES_USER: lbdb_user
+      POSTGRES_DB: lbdb_db
+      POSTGRES_PASSWORD: lbdb_pass
+    volumes:
+      - ./build/postgres/data:/var/lib/postgres/data
+    networks:
+      - backend

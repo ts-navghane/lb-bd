@@ -34,6 +34,11 @@ RUN set -ex \
     && docker-php-ext-enable xdebug
 COPY xdebug.ini /usr/local/etc/php/conf.d/xdebug
 
+# Install Socket dependencies
+RUN docker-php-ext-install sockets \
+	&& docker-php-ext-configure sockets \
+	&& docker-php-ext-enable sockets
+
 # Cleanup:
 RUN apk del --purge autoconf g++ make \
     && rm -rf /var/cache/apk/* \
